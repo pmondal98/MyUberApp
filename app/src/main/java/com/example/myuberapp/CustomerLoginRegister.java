@@ -24,7 +24,7 @@ import com.google.firebase.database.FirebaseDatabase;
 
 public class CustomerLoginRegister extends AppCompatActivity {
 
-    private TextView tvcl,tvregister;
+    private TextView tvcl,tvregister,tvlogin;
     private EditText etemail,etpassword;
     private Button btnlogin,btnregister;
 
@@ -47,6 +47,7 @@ public class CustomerLoginRegister extends AppCompatActivity {
 
         tvcl=findViewById(R.id.tvcl);
         tvregister=findViewById(R.id.tvregister);
+        tvlogin=findViewById(R.id.tvlogin);
         etemail=findViewById(R.id.etemail);
         etpassword=findViewById(R.id.etpassword);
         btnlogin=findViewById(R.id.btnlogin);
@@ -54,6 +55,8 @@ public class CustomerLoginRegister extends AppCompatActivity {
 
         btnregister.setVisibility(View.INVISIBLE);
         btnregister.setEnabled(false);
+        tvlogin.setVisibility(View.INVISIBLE);
+        tvlogin.setEnabled(false);
 
         tvregister.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -65,6 +68,25 @@ public class CustomerLoginRegister extends AppCompatActivity {
 
                 btnregister.setVisibility(View.VISIBLE);
                 btnregister.setEnabled(true);
+                tvlogin.setVisibility(View.VISIBLE);
+                tvlogin.setEnabled(true);
+            }
+        });
+
+        tvlogin.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+
+                btnlogin.setVisibility(View.VISIBLE);
+                tvregister.setVisibility(View.VISIBLE);
+
+                tvcl.setText("LOGIN CUSTOMER");
+
+                btnregister.setVisibility(View.INVISIBLE);
+                btnregister.setEnabled(false);
+                tvlogin.setVisibility(View.INVISIBLE);
+                tvlogin.setEnabled(false);
+
             }
         });
 
@@ -145,7 +167,7 @@ public class CustomerLoginRegister extends AppCompatActivity {
                 else if(!(email.isEmpty() && password.isEmpty()))
                 {
                     loadingbar.setTitle("Customer Login");
-                    loadingbar.setMessage("Please wait...while we login your details");
+                    loadingbar.setMessage("Please wait...while we are checking your credentials");
                     loadingbar.show();
 
                     mAuth.signInWithEmailAndPassword(email,password).addOnCompleteListener(CustomerLoginRegister.this, new OnCompleteListener<AuthResult>() {
@@ -158,9 +180,9 @@ public class CustomerLoginRegister extends AppCompatActivity {
                             }
                             else
                             {
-                                //startActivity(new Intent(CustomerLoginRegister.this,CustomerMapActivity.class));
-                                //finish();
-                                //loadingbar.dismiss();
+                                startActivity(new Intent(CustomerLoginRegister.this,CustomerMapActivity.class));
+                                finish();
+                                loadingbar.dismiss();
                             }
                         }
                     });

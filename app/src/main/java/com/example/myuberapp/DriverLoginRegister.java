@@ -4,6 +4,7 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.app.ProgressDialog;
+import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
@@ -22,7 +23,7 @@ import com.google.firebase.database.FirebaseDatabase;
 
 public class DriverLoginRegister extends AppCompatActivity {
 
-    private TextView tvdl,tvregister;
+    private TextView tvdl,tvregister,tvlogin;
     private EditText etemail,etpassword;
     private Button btnlogin,btnregister;
 
@@ -46,6 +47,7 @@ public class DriverLoginRegister extends AppCompatActivity {
 
         tvdl=findViewById(R.id.tvdl);
         tvregister=findViewById(R.id.tvregister);
+        tvlogin=findViewById(R.id.tvlogin);
         etemail=findViewById(R.id.etemail);
         etpassword=findViewById(R.id.etpassword);
         btnlogin=findViewById(R.id.btnlogin);
@@ -53,6 +55,8 @@ public class DriverLoginRegister extends AppCompatActivity {
 
         btnregister.setVisibility(View.INVISIBLE);
         btnregister.setEnabled(false);
+        tvlogin.setVisibility(View.INVISIBLE);
+        tvlogin.setEnabled(false);
 
         tvregister.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -64,6 +68,25 @@ public class DriverLoginRegister extends AppCompatActivity {
 
                 btnregister.setVisibility(View.VISIBLE);
                 btnregister.setEnabled(true);
+                tvlogin.setVisibility(View.VISIBLE);
+                tvlogin.setEnabled(true);
+            }
+        });
+
+        tvlogin.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+
+                btnlogin.setVisibility(View.VISIBLE);
+                tvregister.setVisibility(View.VISIBLE);
+
+                tvdl.setText("LOGIN DRIVER");
+
+                btnregister.setVisibility(View.INVISIBLE);
+                btnregister.setEnabled(false);
+                tvlogin.setVisibility(View.INVISIBLE);
+                tvlogin.setEnabled(false);
+
             }
         });
 
@@ -144,7 +167,7 @@ public class DriverLoginRegister extends AppCompatActivity {
                 else if(!(email.isEmpty() && password.isEmpty()))
                 {
                     loadingbar.setTitle("Driver Login");
-                    loadingbar.setMessage("Please wait...while we login your details");
+                    loadingbar.setMessage("Please wait...while we are checking your credentials");
                     loadingbar.show();
 
                     mAuth.signInWithEmailAndPassword(email,password).addOnCompleteListener(DriverLoginRegister.this, new OnCompleteListener<AuthResult>() {
@@ -157,9 +180,9 @@ public class DriverLoginRegister extends AppCompatActivity {
                             }
                             else
                             {
-                                //startActivity(new Intent(CustomerLoginRegister.this,CustomerMapActivity.class));
-                                //finish();
-                                //loadingbar.dismiss();
+                                startActivity(new Intent(DriverLoginRegister.this, DriverMapActivity.class));
+                                finish();
+                                loadingbar.dismiss();
                             }
                         }
                     });
