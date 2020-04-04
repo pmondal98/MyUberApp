@@ -9,12 +9,17 @@ import androidx.fragment.app.FragmentActivity;
 import android.Manifest;
 import android.app.AlertDialog;
 import android.content.DialogInterface;
+import android.content.Intent;
 import android.content.IntentSender;
 import android.content.pm.PackageManager;
 import android.location.Location;
 import android.os.Build;
 import android.os.Bundle;
+import android.view.View;
+import android.widget.Button;
 
+import com.firebase.geofire.GeoFire;
+import com.firebase.geofire.GeoLocation;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.ApiException;
 import com.google.android.gms.common.api.GoogleApiClient;
@@ -33,6 +38,10 @@ import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
 
 public class DriverMapActivity extends FragmentActivity implements OnMapReadyCallback, GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener,
         com.google.android.gms.location.LocationListener {
@@ -44,6 +53,13 @@ public class DriverMapActivity extends FragmentActivity implements OnMapReadyCal
     private Marker currentlocationmarker;
 
     private static final int Request_User_Location_Code=99;
+
+    private Button btnlogout,btnsettings;
+
+    private FirebaseAuth mAuth;
+    private FirebaseUser currentUser;
+
+    private boolean currentLogoutDriverStatus = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -58,6 +74,24 @@ public class DriverMapActivity extends FragmentActivity implements OnMapReadyCal
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             checkUserLocationPermission();
         }
+
+        btnlogout=findViewById(R.id.btnlogout);
+        btnsettings=findViewById(R.id.btnsettings);
+
+        mAuth=FirebaseAuth.getInstance();
+        currentUser=mAuth.getCurrentUser();
+
+        btnlogout.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+
+                currentLogoutDriverStatus=true;
+                DisconnectTheDriver();
+
+                mAuth.signOut();
+                LogOutDriver();
+            }
+        });
 
     }
 
@@ -125,11 +159,44 @@ public class DriverMapActivity extends FragmentActivity implements OnMapReadyCal
             LocationServices.FusedLocationApi.removeLocationUpdates(googleApiClient, (com.google.android.gms.location.LocationListener) this);
         }
 
+        String driverId = FirebaseAuth.getInstance().getCurrentUser().getUid();
+        DatabaseReference DriverAvailibilityRef = FirebaseDatabase.getInstance().getReference().child("DRIVERS AVAILABLE");
+
+        GeoFire geoFire = new GeoFire(DriverAvailibilityRef);
+        geoFire.setLocation(driverId, new GeoLocation(location.getLatitude(),location.getLongitude()));
+
     }
 
     @NonNull
     private CameraPosition getCameraPositionWithBearing(LatLng latLng) {
         return new CameraPosition.Builder().target(latLng).zoom(15).build();
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+
+        if (!currentLogoutDriverStatus)
+        {
+            DisconnectTheDriver();
+        }
+    }
+
+    private void DisconnectTheDriver() {
+
+        String driverId = FirebaseAuth.getInstance().getCurrentUser().getUid();
+        DatabaseReference DriverAvailibilityRef = FirebaseDatabase.getInstance().getReference().child("DRIVERS AVAILABLE");
+
+        GeoFire geoFire = new GeoFire(DriverAvailibilityRef);
+        geoFire.removeLocation(driverId);
+
+    }
+
+    private void LogOutDriver() {
+        Intent welcomeIntent=new Intent(DriverMapActivity.this,WelcomeActivity.class);
+        welcomeIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+        startActivity(welcomeIntent);
+        finish();
     }
 
 

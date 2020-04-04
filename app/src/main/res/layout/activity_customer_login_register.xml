@@ -27,7 +27,7 @@
         android:inputType="textEmailAddress"
         android:layout_below="@+id/tvcl"
         android:hint="ENTER YOUR EMAIL ADDRESS"
-        android:layout_marginTop="310dp"
+        android:layout_marginTop="250dp"
         android:textColor="#000"/>
 
     <EditText

@@ -9,12 +9,17 @@ import androidx.fragment.app.FragmentActivity;
 import android.Manifest;
 import android.app.AlertDialog;
 import android.content.DialogInterface;
+import android.content.Intent;
 import android.content.IntentSender;
 import android.content.pm.PackageManager;
 import android.location.Location;
 import android.os.Build;
 import android.os.Bundle;
+import android.view.View;
+import android.widget.Button;
 
+import com.firebase.geofire.GeoFire;
+import com.firebase.geofire.GeoLocation;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.ApiException;
 import com.google.android.gms.common.api.GoogleApiClient;
@@ -34,6 +39,10 @@ import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
 
 public class CustomerMapActivity extends FragmentActivity implements OnMapReadyCallback, GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener,
         com.google.android.gms.location.LocationListener {
@@ -42,9 +51,17 @@ public class CustomerMapActivity extends FragmentActivity implements OnMapReadyC
     private GoogleApiClient googleApiClient;
     private LocationRequest locationRequest;
     private Location lastLocation;
-    private Marker currentlocationmarker;
+    private LatLng CustomerPickUpLocation;
 
     private static final int Request_User_Location_Code=99;
+
+    private Button btnlogout,btnsettings,btncallambulance;
+
+    private FirebaseAuth mAuth;
+    private FirebaseUser currentUser;
+    private DatabaseReference CustomerDatabaseRef;
+
+    String customerId;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -59,6 +76,36 @@ public class CustomerMapActivity extends FragmentActivity implements OnMapReadyC
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             checkUserLocationPermission();
         }
+
+        btnlogout=findViewById(R.id.btnlogout);
+        btnsettings=findViewById(R.id.btnsettings);
+        btncallambulance=findViewById(R.id.btncallambulance);
+
+        mAuth=FirebaseAuth.getInstance();
+        currentUser=mAuth.getCurrentUser();
+        customerId=currentUser.getUid();
+
+        CustomerDatabaseRef= FirebaseDatabase.getInstance().getReference().child("CUSTOMERS REQUESTS");
+
+        btnlogout.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                mAuth.signOut();
+                LogOutCustomer();
+            }
+        });
+
+        btncallambulance.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+
+                GeoFire geoFire = new GeoFire(CustomerDatabaseRef);
+                geoFire.setLocation(customerId, new GeoLocation(lastLocation.getLatitude(),lastLocation.getLongitude()));
+
+                CustomerPickUpLocation=new LatLng(lastLocation.getLatitude(),lastLocation.getLongitude());
+                mMap.addMarker(new MarkerOptions().position(CustomerPickUpLocation).title("Pick Up Here"));
+            }
+        });
 
     }
 
@@ -132,6 +179,17 @@ public class CustomerMapActivity extends FragmentActivity implements OnMapReadyC
     private CameraPosition getCameraPositionWithBearing(LatLng latLng) {
         return new CameraPosition.Builder().target(latLng).zoom(15).build();
     }
+
+    private void LogOutCustomer() {
+
+        Intent welcomeIntent=new Intent(CustomerMapActivity.this,WelcomeActivity.class);
+        welcomeIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+        startActivity(welcomeIntent);
+        finish();
+
+    }
+
+
 
 
 
