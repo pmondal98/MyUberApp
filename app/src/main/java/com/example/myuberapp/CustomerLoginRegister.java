@@ -31,7 +31,8 @@ public class CustomerLoginRegister extends AppCompatActivity {
     private ProgressDialog loadingbar;
 
     private FirebaseAuth mAuth;
-    DatabaseReference ref;
+
+    private DatabaseReference ref;
 
     Customer customer;
 
@@ -41,6 +42,7 @@ public class CustomerLoginRegister extends AppCompatActivity {
         setContentView(R.layout.activity_customer_login_register);
 
         mAuth=FirebaseAuth.getInstance();
+        ref=FirebaseDatabase.getInstance().getReference();
         customer=new Customer();
 
         loadingbar=new ProgressDialog(this);
@@ -133,7 +135,7 @@ public class CustomerLoginRegister extends AppCompatActivity {
                             } else {
                                 FirebaseAuthException e = (FirebaseAuthException) task.getException();
                                 Log.i("ERROR", e.getMessage());
-                                Toast.makeText(CustomerLoginRegister.this, "Customer Registration Failed....Please try again later", Toast.LENGTH_SHORT).show();
+                                Toast.makeText( CustomerLoginRegister.this, "Customer Registration Failed....Please try again later", Toast.LENGTH_SHORT).show();
                                 loadingbar.dismiss();
                             }
                         }
@@ -201,7 +203,7 @@ public class CustomerLoginRegister extends AppCompatActivity {
         customer.setEmail(email);
         customer.setPassword(password);
 
-        ref= FirebaseDatabase.getInstance().getReference().child("CUSTOMERS").child(mAuth.getCurrentUser().getUid());
+        ref=FirebaseDatabase.getInstance().getReference().child("Users").child("Customers").child(mAuth.getCurrentUser().getUid());
 
         ref.setValue(customer);
 

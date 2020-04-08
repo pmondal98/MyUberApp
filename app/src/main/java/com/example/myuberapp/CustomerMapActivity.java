@@ -20,6 +20,8 @@ import android.widget.Button;
 
 import com.firebase.geofire.GeoFire;
 import com.firebase.geofire.GeoLocation;
+import com.firebase.geofire.GeoQuery;
+import com.firebase.geofire.GeoQueryEventListener;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.ApiException;
 import com.google.android.gms.common.api.GoogleApiClient;
@@ -41,8 +43,14 @@ import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
+
+import java.util.HashMap;
+import java.util.List;
 
 public class CustomerMapActivity extends FragmentActivity implements OnMapReadyCallback, GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener,
         com.google.android.gms.location.LocationListener {
@@ -52,7 +60,10 @@ public class CustomerMapActivity extends FragmentActivity implements OnMapReadyC
     private LocationRequest locationRequest;
     private Location lastLocation;
     private LatLng CustomerPickUpLocation;
-
+    private  int radius=1;
+    private Boolean driverfound=false;
+    private String driverfoundID;
+    Marker DriverMarker;
     private static final int Request_User_Location_Code=99;
 
     private Button btnlogout,btnsettings,btncallambulance;
@@ -60,6 +71,9 @@ public class CustomerMapActivity extends FragmentActivity implements OnMapReadyC
     private FirebaseAuth mAuth;
     private FirebaseUser currentUser;
     private DatabaseReference CustomerDatabaseRef;
+    private DatabaseReference DriverAvailableRef;
+    private DatabaseReference driverref;
+    private DatabaseReference driverlocref;
 
     String customerId;
 
@@ -86,6 +100,8 @@ public class CustomerMapActivity extends FragmentActivity implements OnMapReadyC
         customerId=currentUser.getUid();
 
         CustomerDatabaseRef= FirebaseDatabase.getInstance().getReference().child("CUSTOMERS REQUESTS");
+        DriverAvailableRef= FirebaseDatabase.getInstance().getReference().child("DRIVERS AVAILABLE");
+        driverlocref=FirebaseDatabase.getInstance().getReference().child("DRIVERS WORKING");
 
         btnlogout.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -104,9 +120,102 @@ public class CustomerMapActivity extends FragmentActivity implements OnMapReadyC
 
                 CustomerPickUpLocation=new LatLng(lastLocation.getLatitude(),lastLocation.getLongitude());
                 mMap.addMarker(new MarkerOptions().position(CustomerPickUpLocation).title("Pick Up Here"));
+
+                btncallambulance.setText("Getting Your Ambulance");
+                getclosestambulance();
             }
         });
 
+    }
+
+    private void getclosestambulance() {
+        GeoFire geoFire=new GeoFire(DriverAvailableRef);
+        GeoQuery geoQuery=geoFire.queryAtLocation(new GeoLocation(CustomerPickUpLocation.latitude, CustomerPickUpLocation.longitude), radius);
+        geoQuery.removeAllListeners();
+        geoQuery.addGeoQueryEventListener(new GeoQueryEventListener() {
+            @Override
+            public void onKeyEntered(String key, GeoLocation location) {
+                if (!driverfound) {
+                    driverfound = true;
+                    driverfoundID=key;
+
+                    driverref=FirebaseDatabase.getInstance().getReference().child("Users").child("Drivers").child(driverfoundID);
+                    HashMap drivermap= new HashMap();
+                    drivermap.put("CustomerRideID",customerId);
+                    driverref.updateChildren(drivermap);
+                    
+                    GetDriverLocation();
+                    btncallambulance.setText("Looking for Driver Location...");
+                }
+            }
+
+            @Override
+            public void onKeyExited(String key) {
+
+            }
+
+            @Override
+            public void onKeyMoved(String key, GeoLocation location) {
+
+            }
+
+            @Override
+            public void onGeoQueryReady() {
+                if(!driverfound){
+                    radius=radius+1;
+                    getclosestambulance();
+                }
+            }
+
+            @Override
+            public void onGeoQueryError(DatabaseError error) {
+
+            }
+        });
+    }
+
+    private void GetDriverLocation() {
+        driverlocref.child(driverfoundID).child("l")
+                .addValueEventListener(new ValueEventListener() {
+                    @Override
+                    public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                        if(dataSnapshot.exists()){
+                            List<Object> driverLocationMap=(List<Object>) dataSnapshot.getValue();
+                            double LocationLat= 0;
+                            double LocationLong= 0;
+                            btncallambulance.setText("Ambulance Found");
+                            if(driverLocationMap.get(0) != null){
+                                LocationLat=Double.parseDouble(driverLocationMap.get(0).toString());
+
+                            }
+                            if(driverLocationMap.get(1) != null){
+                                LocationLong=Double.parseDouble(driverLocationMap.get(0).toString());
+
+                            }
+                            LatLng driverLatLng = new LatLng(LocationLat, LocationLong);
+                            if(DriverMarker != null){
+                                DriverMarker.remove();
+                            }
+                            Location location1=new Location("");
+                            location1.setLatitude(CustomerPickUpLocation.latitude);
+                            location1.setLongitude(CustomerPickUpLocation.longitude);
+
+
+                            Location location2=new Location("");
+                            location2.setLatitude(driverLatLng.latitude);
+                            location2.setLongitude(driverLatLng.longitude);
+                            float distance=location1.distanceTo(location2);
+                            btncallambulance.setText("Ambulane Found:"+String.valueOf(distance));
+
+                            DriverMarker = mMap.addMarker(new MarkerOptions().position(driverLatLng).title("Your Driver is here"));
+                        }
+                    }
+
+                    @Override
+                    public void onCancelled(@NonNull DatabaseError databaseError) {
+
+                    }
+                });
     }
 
     @Override
