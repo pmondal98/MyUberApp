@@ -137,7 +137,7 @@ public class CustomerMapActivity extends FragmentActivity implements OnMapReadyC
             public void onKeyEntered(String key, GeoLocation location) {
                 if (!driverfound) {
                     driverfound = true;
-                    driverfoundID=key;
+                    driverfoundID = key;
 
                     driverref=FirebaseDatabase.getInstance().getReference().child("Users").child("Drivers").child(driverfoundID);
                     HashMap drivermap= new HashMap();
@@ -161,8 +161,9 @@ public class CustomerMapActivity extends FragmentActivity implements OnMapReadyC
 
             @Override
             public void onGeoQueryReady() {
-                if(!driverfound){
-                    radius=radius+1;
+                if(!driverfound)
+                 {
+                    radius=radius + 1;
                     getclosestambulance();
                 }
             }

@@ -65,7 +65,7 @@ public class DriverMapActivity extends FragmentActivity implements OnMapReadyCal
 
     private FirebaseAuth mAuth;
     private FirebaseUser currentUser;
-    private String driverID,customerID = "  ";
+    private String driverID,customerID = "";
     DatabaseReference AssignedCustomerRef,AssignedCustomerPickupRef;
     private boolean currentLogoutDriverStatus = false;
 
@@ -122,7 +122,7 @@ public class DriverMapActivity extends FragmentActivity implements OnMapReadyCal
     }
 
     private void GetAssignedCustomerPickupLocation() {
-    AssignedCustomerPickupRef=FirebaseDatabase.getInstance().getReference().child("Customer Request").child(customerID).child("l");
+    AssignedCustomerPickupRef=FirebaseDatabase.getInstance().getReference().child("CUSTOMERS REQUESTS").child(customerID).child("l");
     AssignedCustomerPickupRef.addValueEventListener(new ValueEventListener() {
         @Override
         public void onDataChange(@NonNull DataSnapshot dataSnapshot) {

@@ -201,7 +201,7 @@ public class DriverLoginRegister extends AppCompatActivity {
         driver.setEmail(email);
         driver.setPassword(password);
 
-        ref= FirebaseDatabase.getInstance().getReference().child("DRIVERS").child(mAuth.getCurrentUser().getUid());
+        ref= FirebaseDatabase.getInstance().getReference().child("Users").child("Drivers").child(mAuth.getCurrentUser().getUid());
 
         ref.setValue(driver);
 
