@@ -15,8 +15,10 @@ import android.content.pm.PackageManager;
 import android.location.Location;
 import android.os.Build;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
+import android.widget.Toast;
 
 import com.firebase.geofire.GeoFire;
 import com.firebase.geofire.GeoLocation;
@@ -75,6 +77,9 @@ public class CustomerMapActivity extends FragmentActivity implements OnMapReadyC
     private DatabaseReference driverref;
     private DatabaseReference driverlocref;
 
+    double LocationLat= 0;
+    double LocationLong= 0;
+
     String customerId;
 
     @Override
@@ -101,7 +106,6 @@ public class CustomerMapActivity extends FragmentActivity implements OnMapReadyC
 
         CustomerDatabaseRef= FirebaseDatabase.getInstance().getReference().child("CUSTOMERS REQUESTS");
         DriverAvailableRef= FirebaseDatabase.getInstance().getReference().child("DRIVERS AVAILABLE");
-        driverlocref=FirebaseDatabase.getInstance().getReference().child("DRIVERS WORKING");
 
         btnlogout.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -139,14 +143,21 @@ public class CustomerMapActivity extends FragmentActivity implements OnMapReadyC
                     driverfound = true;
                     driverfoundID = key;
 
-                    driverref=FirebaseDatabase.getInstance().getReference().child("Users").child("Drivers").child(driverfoundID);
-                    HashMap drivermap= new HashMap();
-                    drivermap.put("CustomerRideID",customerId);
+                    driverref = FirebaseDatabase.getInstance().getReference().child("Users").child("Drivers").child(driverfoundID);
+                    HashMap drivermap = new HashMap();
+                    drivermap.put("CustomerRideID", customerId);
                     driverref.updateChildren(drivermap);
-                    
-                    GetDriverLocation();
+
                     btncallambulance.setText("Looking for Driver Location...");
+
+                    DatabaseReference driveravailableref = FirebaseDatabase.getInstance().getReference().child("DRIVERS AVAILABLE");
+                    DatabaseReference driverworkingref = FirebaseDatabase.getInstance().getReference().child("DRIVERS WORKING");
+
+                    moveFirebaseRecord(driveravailableref.child(driverfoundID), driverworkingref.child(driverfoundID));
+                    driveravailableref.child(driverfoundID).removeValue();
+                    GetDriverLocation();
                 }
+
             }
 
             @Override
@@ -175,9 +186,36 @@ public class CustomerMapActivity extends FragmentActivity implements OnMapReadyC
         });
     }
 
+
+    public void moveFirebaseRecord(DatabaseReference fromPath, final DatabaseReference toPath) {
+        fromPath.addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(DataSnapshot dataSnapshot) {
+                toPath.setValue(dataSnapshot.getValue(), new DatabaseReference.CompletionListener() {
+                    @Override
+                    public void onComplete(DatabaseError databaseError, DatabaseReference databaseReference) {
+                        if (databaseError != null) {
+                            Log.i("AVAILABLE TO WORKING :", "COPY FAILED");
+                        } else {
+                            Log.i("AVAILABLE TO WORKING :", "COPY SUCCESS");
+
+                        }
+                    }
+                });
+            }
+
+            @Override
+            public void onCancelled(DatabaseError databaseError) {
+                Log.i("A to W (onCancelled) :", "COPY FAILED");
+
+            }
+        });
+    }
+
+
     private void GetDriverLocation() {
-        driverlocref.child(driverfoundID).child("l")
-                .addValueEventListener(new ValueEventListener() {
+        driverlocref=FirebaseDatabase.getInstance().getReference().child("DRIVERS WORKING").child(driverfoundID).child("l");
+        driverlocref.addValueEventListener(new ValueEventListener() {
                     @Override
                     public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
                         if(dataSnapshot.exists()){
@@ -190,10 +228,11 @@ public class CustomerMapActivity extends FragmentActivity implements OnMapReadyC
 
                             }
                             if(driverLocationMap.get(1) != null){
-                                LocationLong=Double.parseDouble(driverLocationMap.get(0).toString());
+                                LocationLong=Double.parseDouble(driverLocationMap.get(1).toString());
 
                             }
                             LatLng driverLatLng = new LatLng(LocationLat, LocationLong);
+
                             if(DriverMarker != null){
                                 DriverMarker.remove();
                             }

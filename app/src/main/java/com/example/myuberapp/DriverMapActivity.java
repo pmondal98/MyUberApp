@@ -57,7 +57,7 @@ public class DriverMapActivity extends FragmentActivity implements OnMapReadyCal
     private GoogleApiClient googleApiClient;
     private LocationRequest locationRequest;
     private Location lastLocation;
-    private Marker currentlocationmarker;
+    private Marker currentlocationmarker,PickUpMarker;
 
     private static final int Request_User_Location_Code=99;
 
@@ -66,7 +66,7 @@ public class DriverMapActivity extends FragmentActivity implements OnMapReadyCal
     private FirebaseAuth mAuth;
     private FirebaseUser currentUser;
     private String driverID,customerID = "";
-    DatabaseReference AssignedCustomerRef,AssignedCustomerPickupRef;
+    private DatabaseReference AssignedCustomerRef,AssignedCustomerPickupRef;
     private boolean currentLogoutDriverStatus = false;
 
     @Override
@@ -110,6 +110,7 @@ public class DriverMapActivity extends FragmentActivity implements OnMapReadyCal
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
                 if(dataSnapshot.exists()){
                     customerID=dataSnapshot.getValue().toString();
+
                     GetAssignedCustomerPickupLocation() ;
                 }
             }
@@ -137,11 +138,15 @@ public class DriverMapActivity extends FragmentActivity implements OnMapReadyCal
 
                 }
                 if(customerLocationMap.get(1) != null){
-                    LocationLong=Double.parseDouble(customerLocationMap.get(0).toString());
+                    LocationLong=Double.parseDouble(customerLocationMap.get(1).toString());
 
                 }
                 LatLng driverLatLng = new LatLng(LocationLat, LocationLong);
-                mMap.addMarker(new MarkerOptions().position(driverLatLng).title("Pickup Location"));
+                if (PickUpMarker != null)
+                {
+                    PickUpMarker.remove();
+                }
+                PickUpMarker = mMap.addMarker(new MarkerOptions().position(driverLatLng).title("Pickup Location"));
             }
         }
 
@@ -217,12 +222,13 @@ public class DriverMapActivity extends FragmentActivity implements OnMapReadyCal
                 }
 
                 String driverId = FirebaseAuth.getInstance().getCurrentUser().getUid();
-                DatabaseReference DriverAvailibilityRef = FirebaseDatabase.getInstance().getReference().child("DRIVERS AVAILABLE");
 
+                DatabaseReference DriverAvailibilityRef = FirebaseDatabase.getInstance().getReference().child("DRIVERS AVAILABLE");
                 GeoFire geoFireAvailability = new GeoFire(DriverAvailibilityRef);
 
                 DatabaseReference DriverWorkingRef = FirebaseDatabase.getInstance().getReference().child("DRIVERS WORKING");
                 GeoFire geoFireWorking = new GeoFire(DriverWorkingRef);
+
                 switch (customerID) {
                     case "":
                         geoFireWorking.removeLocation(driverId);
